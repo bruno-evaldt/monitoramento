@@ -2,11 +2,16 @@
 
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Fortify\Features;
 use Livewire\Livewire;
 
+uses(RefreshDatabase::class);
+
 beforeEach(function () {
-    $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
+    if (!Features::enabled(Features::twoFactorAuthentication())) {
+        $this->markTestSkipped('Two-factor authentication not enabled.');
+    }
 
     Features::twoFactorAuthentication([
         'confirm' => true,
