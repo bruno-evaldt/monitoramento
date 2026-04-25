@@ -11,6 +11,7 @@ class Apartment extends Model
         'number',
         'block',
         'valve_status',
+        'daily_limit_volume',
     ];
 
     public function user()

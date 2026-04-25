@@ -11,7 +11,10 @@ use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
+
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, TwoFactorAuthenticatable, HasRoles;
@@ -72,5 +75,14 @@ class User extends Authenticatable
     public function valveLogs()
     {
         return $this->hasMany(ValveLog::class);
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->hasRole([
+            \App\Enums\RoleEnum::SUPER_ADMIN->value, 
+            \App\Enums\RoleEnum::SINDICO->value, 
+            \App\Enums\RoleEnum::MORADOR->value
+        ]);
     }
 }

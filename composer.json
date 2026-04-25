@@ -13,13 +13,15 @@
         "laravel/framework": "^12.0",
         "laravel/tinker": "^3.0",
         "livewire/flux": "^2.12.0",
-        "livewire/livewire": "^4.1"
+        "livewire/livewire": "^4.1",
+        "php-mqtt/client": "^2.3"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24",
         "laravel/pail": "^1.2.5",
         "laravel/pint": "^1.27",
         "laravel/sail": "^1.53",
+        "lucascudo/laravel-pt-br-localization": "*",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.9",
         "pestphp/pest": "^4.4",

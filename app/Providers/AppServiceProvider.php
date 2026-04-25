@@ -23,6 +23,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \App\Models\Reading::observe(\App\Observers\ReadingObserver::class);
+        
+        \Filament\Support\Facades\FilamentView::registerRenderHook(
+            \Filament\View\PanelsRenderHook::HEAD_END,
+            fn (): string => '<link rel="manifest" href="/manifest.json"><script>if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js");}</script>'
+        );
+
         $this->configureDefaults();
     }
 
