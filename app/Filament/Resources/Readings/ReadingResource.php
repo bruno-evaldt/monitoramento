@@ -19,7 +19,7 @@ class ReadingResource extends Resource
     protected static ?string $model = Reading::class;
 
     protected static ?string $modelLabel = 'Leitura';
-    protected static ?string $pluralModelLabel = 'Leitura';
+    protected static ?string $pluralModelLabel = 'Leituras';
 
     public static function getNavigationGroup(): ?string
     {

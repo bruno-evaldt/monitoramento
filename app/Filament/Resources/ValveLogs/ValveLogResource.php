@@ -19,7 +19,7 @@ class ValveLogResource extends Resource
     protected static ?string $model = ValveLog::class;
 
     protected static ?string $modelLabel = 'Log da Válvula';
-    protected static ?string $pluralModelLabel = 'Logs da Válvula';
+    protected static ?string $pluralModelLabel = 'Logs das Válvulas';
 
     public static function getNavigationGroup(): ?string
     {

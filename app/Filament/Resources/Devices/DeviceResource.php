@@ -18,7 +18,7 @@ class DeviceResource extends Resource
 {
     protected static ?string $model = Device::class;
 
-    protected static ?string $modelLabel = 'Dispositivo Kincony';
+    protected static ?string $modelLabel = 'Dispositivo';
     protected static ?string $pluralModelLabel = 'Dispositivos';
 
     public static function getNavigationGroup(): ?string
