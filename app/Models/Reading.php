@@ -15,6 +15,7 @@ class Reading extends Model
 
     protected $casts = [
         'read_at' => 'datetime',
+        'reading_type' => \App\Enums\ReadingTypeEnum::class,
     ];
 
     public function apartment()

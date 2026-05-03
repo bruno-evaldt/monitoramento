@@ -45,6 +45,18 @@ class ApartmentResource extends Resource
         ];
     }
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+
+        if ($user && $user->hasRole(\App\Enums\RoleEnum::MORADOR->value) && !$user->hasRole(\App\Enums\RoleEnum::SUPER_ADMIN->value) && !$user->hasRole(\App\Enums\RoleEnum::SINDICO->value)) {
+            return $query->where('user_id', $user->id);
+        }
+
+        return $query;
+    }
+
     public static function getPages(): array
     {
         return [

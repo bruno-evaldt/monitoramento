@@ -23,22 +23,26 @@ class ReadingsTable
                     ->sortable(),
                 TextColumn::make('reading_type')
                     ->label('Tipo')
+                    ->badge()
                     ->searchable(),
                 TextColumn::make('read_at')
                     ->label('Lido em')
-                    ->dateTime()
+                    ->dateTime('d/m/Y H:i')
                     ->sortable(),
                 TextColumn::make('created_at')
                     ->label('Criado em')
-                    ->dateTime()
+                    ->dateTime('d/m/Y H:i')
+                    ->timezone('America/Sao_Paulo')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
                     ->label('Atualizado em')
-                    ->dateTime()
+                    ->dateTime('d/m/Y H:i')
+                    ->timezone('America/Sao_Paulo')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 //
             ])

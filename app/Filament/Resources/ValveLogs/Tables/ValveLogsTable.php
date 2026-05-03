@@ -21,20 +21,28 @@ class ValveLogsTable
                     ->label('Morador (Usuário)')
                     ->sortable()
                     ->searchable(),
+                TextColumn::make('user.roles.name')
+                    ->label('Cargo')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => \App\Enums\RoleEnum::tryFrom($state)?->label() ?? $state),
                 TextColumn::make('action')
                     ->label('Ação')
+                    ->badge()
                     ->searchable(),
                 TextColumn::make('created_at')
                     ->label('Data')
-                    ->dateTime()
+                    ->dateTime('d/m/Y H:i')
+                    ->timezone('America/Sao_Paulo')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: false),
                 TextColumn::make('updated_at')
                     ->label('Atualizado em')
-                    ->dateTime()
+                    ->dateTime('d/m/Y H:i')
+                    ->timezone('America/Sao_Paulo')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 //
             ])

@@ -22,18 +22,20 @@ class UsersTable
                 TextColumn::make('roles.name')
                     ->label('Cargos')
                     ->badge()
+                    ->formatStateUsing(fn ($state) => \App\Enums\RoleEnum::tryFrom($state)?->label() ?? $state)
                     ->searchable(),
                 TextColumn::make('created_at')
                     ->label('Criado em')
-                    ->dateTime()
+                    ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
                     ->label('Atualizado em')
-                    ->dateTime()
+                    ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 //
             ])

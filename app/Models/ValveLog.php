@@ -12,6 +12,10 @@ class ValveLog extends Model
         'action',
     ];
 
+    protected $casts = [
+        'action' => \App\Enums\ValveActionEnum::class,
+    ];
+
     public function apartment()
     {
         return $this->belongsTo(Apartment::class);
