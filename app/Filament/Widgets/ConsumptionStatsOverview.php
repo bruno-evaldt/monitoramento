@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 
 class ConsumptionStatsOverview extends BaseWidget
 {
+    protected static ?int $sort = 2;
+
     protected function getStats(): array
     {
         $user = auth()->user();
@@ -23,9 +25,9 @@ class ConsumptionStatsOverview extends BaseWidget
 
         // 1. Consumo Hoje
         $queryToday = clone $query;
-        $totalToday = $queryToday->whereDate('read_at', Carbon::today())->sum('volume');
+        $totalToday = $queryToday->whereBetween('read_at', [Carbon::today()->startOfDay(), Carbon::today()->endOfDay()])->sum('volume');
         $queryYesterday = clone $query;
-        $totalYesterday = $queryYesterday->whereDate('read_at', Carbon::yesterday())->sum('volume');
+        $totalYesterday = $queryYesterday->whereBetween('read_at', [Carbon::yesterday()->startOfDay(), Carbon::yesterday()->endOfDay()])->sum('volume');
         
         $diffToday = $totalToday - $totalYesterday;
         $descToday = abs($diffToday) . ' L ' . ($diffToday >= 0 ? 'a mais' : 'a menos') . ' que ontem';
@@ -34,9 +36,9 @@ class ConsumptionStatsOverview extends BaseWidget
 
         // 2. Consumo Este Mês
         $queryThisMonth = clone $query;
-        $totalThisMonth = $queryThisMonth->whereMonth('read_at', Carbon::now()->month)->whereYear('read_at', Carbon::now()->year)->sum('volume');
+        $totalThisMonth = $queryThisMonth->whereBetween('read_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()])->sum('volume');
         $queryLastMonth = clone $query;
-        $totalLastMonth = $queryLastMonth->whereMonth('read_at', Carbon::now()->subMonth()->month)->whereYear('read_at', Carbon::now()->subMonth()->year)->sum('volume');
+        $totalLastMonth = $queryLastMonth->whereBetween('read_at', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()])->sum('volume');
 
         $diffMonth = $totalThisMonth - $totalLastMonth;
         $descMonth = abs($diffMonth) . ' L ' . ($diffMonth >= 0 ? 'a mais' : 'a menos') . ' que o mês passado';

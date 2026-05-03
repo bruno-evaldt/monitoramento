@@ -9,7 +9,8 @@ use Filament\Widgets\ChartWidget;
 class MonthlyConsumptionChart extends ChartWidget
 {
     protected ?string $heading = 'Consumo Mensal';
-    protected static ?int $sort = 2; // To appear below the StatsOverview (which usually has default sort)
+    protected static ?int $sort = 3;
+    protected int|string|array $columnSpan = 'full';
 
     protected function getData(): array
     {
@@ -28,15 +29,14 @@ class MonthlyConsumptionChart extends ChartWidget
         // Buscar dados dos últimos 6 meses
         for ($i = 5; $i >= 0; $i--) {
             $date = Carbon::now()->startOfMonth()->subMonths($i);
-            
+
             // Formatando como 'Mai/26'
             $labels[] = ucfirst($date->translatedFormat('M/y'));
-            
+
             $queryMonth = clone $query;
-            $total = $queryMonth->whereMonth('read_at', $date->month)
-                                ->whereYear('read_at', $date->year)
-                                ->sum('volume');
-            
+            $total = $queryMonth->whereBetween('read_at', [$date->copy()->startOfMonth(), $date->copy()->endOfMonth()])
+                ->sum('volume');
+
             $data[] = round($total, 2);
         }
 
@@ -57,4 +57,6 @@ class MonthlyConsumptionChart extends ChartWidget
     {
         return 'bar';
     }
+
+
 }
