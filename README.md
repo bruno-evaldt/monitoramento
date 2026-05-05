@@ -141,18 +141,18 @@ O ecossistema é assíncrono e baseado em eventos via mensageria (MQTT). Abaixo 
 
 ```mermaid
 graph TD
-    A[💧 Sensor de Fluxo] -->|Pulsos Elétricos| B(Microcontrolador - ESP32)
-    B -->|WiFi + MQTT Publish| C((Broker MQTT - emqx))
+    A["💧 Sensor de Fluxo"] -->|Pulsos Eletricos| B("Microcontrolador - ESP32")
+    B -->|WiFi + MQTT Publish| C(("Broker MQTT - emqx"))
     
-    C -->|MQTT Subscribe| D[Terminal Listener - artisan mqtt:listen]
+    C -->|MQTT Subscribe| D["Terminal Listener - artisan mqtt:listen"]
     
-    D -->|Valida MAC e Salva| E[(Banco de Dados)]
-    D -->|Verifica Vazamento contínuo| F{Vazamento?}
+    D -->|Valida MAC e Salva| E[("Banco de Dados")]
+    D -->|Verifica Vazamento continuo| F{"Vazamento?"}
     
-    F -->|Sim (3/8 minutos)| G[Job na Fila - Laravel Queue]
-    G -->|Dispara Alerta| H[📧 E-mail do Morador]
+    F -->|Sim 3 a 8 minutos| G["Job na Fila - Laravel Queue"]
+    G -->|Dispara Alerta| H["📧 E-mail do Morador"]
     
-    I[Painel Web - Administrador/Morador] <-->|Consulta Dashboard| E
+    I["Painel Web - Admin/Sindico/Morador"] <-->|Consulta Dashboard| E
     I -->|Solicita Leitura Manual| C
 ```
 
@@ -171,8 +171,11 @@ graph TD
 
 O sistema utiliza controle de permissões (ACL) no painel do Filament para garantir que os dados sejam acessados apenas pelas pessoas autorizadas.
 
-* **Administrador / Síndico:**
-  Tem acesso total ao painel. Pode visualizar os dados de consumo de **todos** os apartamentos, registrar novas placas (devices), gerenciar usuários/moradores e emitir relatórios ou solicitar leituras manuais das placas do condomínio.
+* **Administrador (Admin):**
+  Tem acesso total ao sistema. Pode visualizar e editar todos os dados, gerenciar configurações globais, registrar novas placas (devices) no banco de dados e gerenciar os perfis de usuários, síndicos e moradores.
+
+* **Síndico:**
+  Possui um nível de acesso intermediário. Pode visualizar os dados de consumo e relatórios de **todos** os apartamentos do condomínio, além de solicitar leituras manuais das placas, mas não possui permissão para alterar configurações críticas de sistema ou deletar dispositivos.
 
 * **Morador (Resident):**
   Acesso restrito. Ao fazer login no dashboard, o morador enxerga **apenas as métricas e o histórico do seu próprio apartamento**. Ele pode verificar o consumo diário, mensal e visualizar os gráficos do seu uso pessoal, bem como fechar o fluxo de água de sua residência, mas não tem acesso aos dados de vizinhos ou configurações do sistema.
