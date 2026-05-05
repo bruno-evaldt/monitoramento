@@ -11,6 +11,7 @@ class MonthlyConsumptionChart extends ChartWidget
     protected ?string $heading = 'Consumo Mensal';
     protected static ?int $sort = 3;
     protected int|string|array $columnSpan = 'full';
+    protected ?string $maxHeight = '250px';
 
     protected function getData(): array
     {

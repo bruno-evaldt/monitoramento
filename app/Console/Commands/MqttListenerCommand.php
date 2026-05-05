@@ -65,17 +65,68 @@ class MqttListenerCommand extends Command
                                     ->where('sensor_pin', $sensorPin)
                                     ->first();
 
-                    if ($device) {
-                        $isManual = isset($data['type']) && $data['type'] === 'manual';
-                        
-                        // Salva o histórico (Reading) associado ao Apartamento desse Device
-                        Reading::create([
-                            'apartment_id' => $device->apartment_id,
-                            'volume' => $data['volume'],
-                            'reading_type' => $isManual ? \App\Enums\ReadingTypeEnum::MANUAL : \App\Enums\ReadingTypeEnum::AUTOMATIC,
-                        ]);
-                        $this->info("✔ Leitura (" . ($isManual ? 'Manual' : 'Automática') . ") salva com sucesso pro Ap: " . $device->apartment_id);
-                    } else {
+                        if ($device) {
+                            $isManual = isset($data['type']) && $data['type'] === 'manual';
+                            
+                            // Salva o histórico (Reading) associado ao Apartamento desse Device
+                            Reading::create([
+                                'apartment_id' => $device->apartment_id,
+                                'volume' => $data['volume'],
+                                'reading_type' => $isManual ? \App\Enums\ReadingTypeEnum::MANUAL : \App\Enums\ReadingTypeEnum::AUTOMATIC,
+                                'read_at' => now(),
+                            ]);
+                            $this->info("✔ Leitura (" . ($isManual ? 'Manual' : 'Automática') . ") salva com sucesso pro Ap: " . $device->apartment_id);
+
+                            // Lógica de verificação de vazamento para leituras regulares (automáticas)
+                            if (!$isManual) {
+                                $apartmentId = $device->apartment_id;
+                                $cacheKeyStart = "flow_start_{$apartmentId}";
+                                $cacheKeyLast = "flow_last_{$apartmentId}";
+                                $cacheKeyLevel = "flow_level_{$apartmentId}";
+
+                                $volume = (float) $data['volume'];
+                                $now = now()->timestamp;
+
+                                if ($volume > 0) {
+                                    $lastReadingTimeStr = \Illuminate\Support\Facades\Cache::get($cacheKeyLast);
+
+                                    // Se não tem leitura anterior ou a última foi há mais de 2 minutos (fluxo parou e voltou)
+                                    if (!$lastReadingTimeStr || ($now - (int)$lastReadingTimeStr) > 120) {
+                                        \Illuminate\Support\Facades\Cache::put($cacheKeyStart, $now);
+                                        \Illuminate\Support\Facades\Cache::put($cacheKeyLast, $now);
+                                        \Illuminate\Support\Facades\Cache::put($cacheKeyLevel, 0);
+                                    } else {
+                                        // Fluxo contínuo
+                                        \Illuminate\Support\Facades\Cache::put($cacheKeyLast, $now);
+                                        
+                                        $startTime = (int)\Illuminate\Support\Facades\Cache::get($cacheKeyStart);
+                                        $level = (int)\Illuminate\Support\Facades\Cache::get($cacheKeyLevel, 0);
+                                        
+                                        $durationMinutes = floor(($now - $startTime) / 60);
+
+                                        $apartment = \App\Models\Apartment::with('user')->find($apartmentId);
+
+                                        if ($apartment && $apartment->user && $apartment->user->email) {
+                                            if ($durationMinutes >= 3 && $level == 0) {
+                                                \Illuminate\Support\Facades\Mail::to($apartment->user)->send(new \App\Mail\LeakWarningMail($apartment, 3, false));
+                                                \Illuminate\Support\Facades\Cache::put($cacheKeyLevel, 1);
+                                                $this->warn("Aviso 1 enviado para Ap {$apartmentId} (3 min de fluxo)");
+                                            } elseif ($durationMinutes >= 8 && $level == 1) {
+                                                \Illuminate\Support\Facades\Mail::to($apartment->user)->send(new \App\Mail\LeakWarningMail($apartment, 8, true));
+                                                \Illuminate\Support\Facades\Cache::put($cacheKeyLevel, 2);
+                                                $this->warn("Aviso 2 enviado para Ap {$apartmentId} (8 min de fluxo)");
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    // Volume 0 = fluxo parou
+                                    \Illuminate\Support\Facades\Cache::forget($cacheKeyStart);
+                                    \Illuminate\Support\Facades\Cache::forget($cacheKeyLast);
+                                    \Illuminate\Support\Facades\Cache::forget($cacheKeyLevel);
+                                }
+                            }
+
+                        } else {
                         $this->error("Placa MAC {$macAddress} com Sensor Pin {$sensorPin} não encontrada no banco (devices)!");
                     }
                 }

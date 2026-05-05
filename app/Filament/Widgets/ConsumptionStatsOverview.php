@@ -58,6 +58,19 @@ class ConsumptionStatsOverview extends BaseWidget
             $chartData = [0, 0];
         }
 
+        // Gráfico este mês
+        $chartQueryMonth = clone $query;
+        $readingsMonth = $chartQueryMonth->select(DB::raw('DATE(read_at) as date'), DB::raw('SUM(volume) as total'))
+            ->where('read_at', '>=', Carbon::now()->startOfMonth())
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+            
+        $chartDataMonth = $readingsMonth->pluck('total')->toArray();
+        if (empty($chartDataMonth)) {
+            $chartDataMonth = [0, 0];
+        }
+
         return [
             Stat::make('Consumo Hoje (' . Carbon::today()->format('d/m') . ')', number_format($totalToday, 2, ',', '.') . ' L')
                 ->description($descToday)
@@ -73,7 +86,7 @@ class ConsumptionStatsOverview extends BaseWidget
             Stat::make('Consumo Este Mês', number_format($totalThisMonth, 2, ',', '.') . ' L')
                 ->description($descMonth)
                 ->descriptionIcon($iconMonth)
-                ->chart($chartData)
+                ->chart($chartDataMonth)
                 ->color($colorMonth),
         ];
     }
