@@ -47,6 +47,20 @@ class UserResource extends Resource
         ];
     }
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+
+        if ($user && $user->hasRole(\App\Enums\RoleEnum::SINDICO->value)) {
+            return $query->whereDoesntHave('roles', function ($q) {
+                $q->where('name', \App\Enums\RoleEnum::SUPER_ADMIN->value);
+            });
+        }
+
+        return $query;
+    }
+
     public static function getPages(): array
     {
         return [
