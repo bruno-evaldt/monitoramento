@@ -68,10 +68,28 @@ class MqttListenerCommand extends Command
                         if ($device) {
                             $isManual = isset($data['type']) && $data['type'] === 'manual';
                             
-                            // Salva o histórico (Reading) associado ao Apartamento desse Device
+                            $cumulativeVolume = (float) $data['volume'];
+                            $cacheKey = "device_last_cumulative_vol_{$device->id}";
+                            $lastCumulative = \Illuminate\Support\Facades\Cache::get($cacheKey);
+
+                            if ($lastCumulative === null) {
+                                // Primeira leitura após inicialização do cache: define o baseline
+                                $delta = 0.0;
+                            } else {
+                                if ($cumulativeVolume >= $lastCumulative) {
+                                    $delta = $cumulativeVolume - $lastCumulative;
+                                } else {
+                                    // Dispositivo reiniciou, o volume cumulativo recomeça
+                                    $delta = $cumulativeVolume;
+                                }
+                            }
+
+                            \Illuminate\Support\Facades\Cache::put($cacheKey, $cumulativeVolume);
+
+                            // Salva o histórico (Reading) associado ao Apartamento desse Device com o delta
                             Reading::create([
                                 'apartment_id' => $device->apartment_id,
-                                'volume' => $data['volume'],
+                                'volume' => $delta,
                                 'reading_type' => $isManual ? \App\Enums\ReadingTypeEnum::MANUAL : \App\Enums\ReadingTypeEnum::AUTOMATIC,
                                 'read_at' => now(),
                             ]);
@@ -84,7 +102,7 @@ class MqttListenerCommand extends Command
                                 $cacheKeyLast = "flow_last_{$apartmentId}";
                                 $cacheKeyLevel = "flow_level_{$apartmentId}";
 
-                                $volume = (float) $data['volume'];
+                                $volume = $delta;
                                 $now = now()->timestamp;
 
                                 if ($volume > 0) {

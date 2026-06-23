@@ -25,14 +25,32 @@ class DeviceApiController extends Controller
             return response()->json(['message' => 'Device not found'], 404);
         }
 
+        $cumulativeVolume = (float) $request->volume;
+        $cacheKey = "device_last_cumulative_vol_{$device->id}";
+        $lastCumulative = \Illuminate\Support\Facades\Cache::get($cacheKey);
+
+        if ($lastCumulative === null) {
+            // Primeira leitura após inicialização do cache: define o baseline
+            $delta = 0.0;
+        } else {
+            if ($cumulativeVolume >= $lastCumulative) {
+                $delta = $cumulativeVolume - $lastCumulative;
+            } else {
+                // Dispositivo reiniciou, o volume cumulativo recomeça
+                $delta = $cumulativeVolume;
+            }
+        }
+
+        \Illuminate\Support\Facades\Cache::put($cacheKey, $cumulativeVolume);
+
         $reading = Reading::create([
             'apartment_id' => $device->apartment_id,
-            'volume' => $request->volume,
+            'volume' => $delta,
             'reading_type' => 'automatic',
             'read_at' => now(),
         ]);
 
-        Log::info("Reading stored for device {$mac_address}: {$request->volume}L");
+        Log::info("Reading stored for device {$mac_address}: {$delta}L (cumulative: {$cumulativeVolume}L)");
 
         return response()->json(['message' => 'Reading stored successfully', 'reading_id' => $reading->id], 201);
     }

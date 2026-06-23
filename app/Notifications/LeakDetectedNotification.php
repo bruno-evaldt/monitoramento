@@ -13,10 +13,12 @@ class LeakDetectedNotification extends Notification implements ShouldQueue
     use Queueable;
 
     protected $apartment;
+    protected $isLastAlert;
 
-    public function __construct(Apartment $apartment)
+    public function __construct(Apartment $apartment, bool $isLastAlert = false)
     {
         $this->apartment = $apartment;
+        $this->isLastAlert = $isLastAlert;
     }
 
     public function via(object $notifiable): array
@@ -26,21 +28,25 @@ class LeakDetectedNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
+        $subject = $this->isLastAlert ? 'ALERTA FINAL: Vazamento Contínuo de Água!' : 'ALERTA: Possível Vazamento Detectado';
+
         return (new MailMessage)
-                    ->error()
-                    ->subject('ALERTA: Possível Vazamento Detectado')
-                    ->greeting('Olá!')
-                    ->line("O sistema detectou um fluxo contínuo de água no apartamento {$this->apartment->number}.")
-                    ->line('Por favor, verifique se há alguma torneira aberta ou cano rompido.')
-                    ->action('Ver Painel', url('/app'))
-                    ->line('Se não for você, considere trancar a válvula pelo sistema.');
+                    ->subject($subject)
+                    ->view('emails.leak_warning', [
+                        'apartment' => $this->apartment,
+                        'isFinalWarning' => $this->isLastAlert,
+                    ]);
     }
 
     public function toArray(object $notifiable): array
     {
+        $message = $this->isLastAlert 
+            ? "ALERTA FINAL: Vazamento contínuo persistente no apartamento {$this->apartment->number}." 
+            : "Possível vazamento detectado no apartamento {$this->apartment->number}.";
+
         return [
             'apartment_id' => $this->apartment->id,
-            'message' => "Possível vazamento detectado no apartamento {$this->apartment->number}.",
+            'message' => $message,
             'type' => 'leak'
         ];
     }

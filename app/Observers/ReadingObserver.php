@@ -53,44 +53,39 @@ class ReadingObserver
 
     private function checkContinuousLeak(Apartment $apartment, Reading $reading)
     {
-        // Se a placa envia 1 leitura por minuto (quando há fluxo),
-        // 15 leituras seguidas com volume > 0 em um intervalo de ~15 minutos indicam vazamento.
-
-        // Pega as últimas 15 leituras
+        // Pega as últimas 5 leituras do apartamento ordenadas por ID
         $lastReadings = Reading::where('apartment_id', $apartment->id)
-            ->latest()
-            ->take(15)
+            ->latest('id')
+            ->take(5)
             ->get();
 
-        if ($lastReadings->count() < 15) return;
-
-        // Verifica se todas as 15 leituras têm volume > 0 (fluxo contínuo) e estão em um intervalo curto de tempo (ex: max 20 minutos entre a primeira e a última dessas 15)
-        $isContinuous = $lastReadings->every(function ($r) {
-            return $r->volume > 0;
-        });
-
-        $firstOfFifteen = $lastReadings->last();
-        $lastOfFifteen = $lastReadings->first();
-        
-        $timeDiffMinutes = $lastOfFifteen->created_at->diffInMinutes($firstOfFifteen->created_at);
-
-        // Se foram 15 leituras ininterruptas em menos de 20 minutos
-        if ($isContinuous && $timeDiffMinutes <= 20) {
-            
-            $cacheKey = "notified_leak_{$apartment->id}_" . now()->format('YmdH'); // 1 alerta por hora
-            if (!Cache::has($cacheKey)) {
-
-                if ($apartment->user) {
-                    $apartment->user->notify(new LeakDetectedNotification($apartment));
-                }
-
-                $admins = User::role('super_admin')->get();
-                foreach($admins as $admin) {
-                    $admin->notify(new LeakDetectedNotification($apartment));
-                }
-
-                Cache::put($cacheKey, true, now()->addHour());
+        $consecutiveActive = 0;
+        foreach ($lastReadings as $r) {
+            if ($r->volume > 0) {
+                $consecutiveActive++;
+            } else {
+                break;
             }
+        }
+
+        if ($consecutiveActive === 2) {
+            // 2 minutos ininterruptos de consumo (2 leituras seguidas com volume > 0)
+            $this->sendLeakNotification($apartment, false);
+        } elseif ($consecutiveActive === 3) {
+            // 3 minutos ininterruptos de consumo (3 leituras seguidas com volume > 0) - Último alerta
+            $this->sendLeakNotification($apartment, true);
+        }
+    }
+
+    private function sendLeakNotification(Apartment $apartment, bool $isLastAlert)
+    {
+        if ($apartment->user) {
+            $apartment->user->notify(new LeakDetectedNotification($apartment, $isLastAlert));
+        }
+
+        $admins = User::role('super_admin')->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new LeakDetectedNotification($apartment, $isLastAlert));
         }
     }
 }
